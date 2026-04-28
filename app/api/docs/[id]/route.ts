@@ -61,8 +61,8 @@ export async function PUT(
     }
 
     const sanitizedContent = content ? DOMPurify.sanitize(content, {
-      ADD_TAGS: ['iframe', 'video'],
-      ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'controls'],
+      ADD_TAGS: ['iframe', 'video', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', 'sub', 'sup', 'hr', 'blockquote', 'strike'],
+      ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'controls', 'colspan', 'rowspan', 'style', 'color', 'background-color'],
     }) : existingDoc.content;
 
     const doc = await prisma.doc.update({
