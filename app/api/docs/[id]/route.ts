@@ -60,7 +60,10 @@ export async function PUT(
       }
     }
 
-    const sanitizedContent = content ? DOMPurify.sanitize(content) : existingDoc.content;
+    const sanitizedContent = content ? DOMPurify.sanitize(content, {
+      ADD_TAGS: ['iframe', 'video'],
+      ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'controls'],
+    }) : existingDoc.content;
 
     const doc = await prisma.doc.update({
       where: { id: parseInt(id) },

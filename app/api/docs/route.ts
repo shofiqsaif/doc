@@ -43,7 +43,10 @@ export async function POST(request: Request) {
       counter++;
     }
 
-    const sanitizedContent = DOMPurify.sanitize(content || '');
+    const sanitizedContent = DOMPurify.sanitize(content || '', {
+      ADD_TAGS: ['iframe', 'video'],
+      ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'controls'],
+    });
 
     const doc = await prisma.doc.create({
       data: { 

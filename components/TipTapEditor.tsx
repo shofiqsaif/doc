@@ -4,7 +4,88 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
+import { Node } from '@tiptap/core';
 import { useState } from 'react';
+
+// Custom Video extension
+const Video = Node.create({
+  name: 'video',
+  group: 'block',
+  atom: true,
+  addAttributes() {
+    return {
+      src: { default: null },
+      controls: { default: true },
+      class: { default: 'max-w-full' },
+      width: { default: null },
+      height: { default: null },
+      autoplay: { default: null },
+      loop: { default: null },
+      muted: { default: null },
+      poster: { default: null },
+    };
+  },
+  parseHTML() {
+    return [{
+      tag: 'video',
+      getAttrs: (element) => {
+        if (!(element instanceof HTMLElement)) return false;
+        return {
+          src: element.getAttribute('src'),
+          controls: element.hasAttribute('controls'),
+          width: element.getAttribute('width'),
+          height: element.getAttribute('height'),
+          autoplay: element.hasAttribute('autoplay'),
+          loop: element.hasAttribute('loop'),
+          muted: element.hasAttribute('muted'),
+          poster: element.getAttribute('poster'),
+          class: element.getAttribute('class') || 'max-w-full',
+        };
+      }
+    }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ['video', { ...HTMLAttributes, controls: true, class: 'max-w-full' }];
+  },
+});
+
+// Custom Iframe extension for YouTube embeds
+const Iframe = Node.create({
+  name: 'iframe',
+  group: 'block',
+  atom: true,
+  addAttributes() {
+    return {
+      src: { default: null },
+      width: { default: '560' },
+      height: { default: '315' },
+      frameborder: { default: '0' },
+      allow: { default: null },
+      allowfullscreen: { default: true },
+      class: { default: 'max-w-full' },
+    };
+  },
+  parseHTML() {
+    return [{
+      tag: 'iframe',
+      getAttrs: (element) => {
+        if (!(element instanceof HTMLElement)) return false;
+        return {
+          src: element.getAttribute('src'),
+          width: element.getAttribute('width') || '560',
+          height: element.getAttribute('height') || '315',
+          frameborder: element.getAttribute('frameborder') || '0',
+          allow: element.getAttribute('allow'),
+          allowfullscreen: element.hasAttribute('allowfullscreen'),
+          class: element.getAttribute('class') || 'max-w-full',
+        };
+      }
+    }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ['iframe', { ...HTMLAttributes, class: 'max-w-full' }];
+  },
+});
 
 interface TipTapEditorProps {
   content: string;
@@ -19,6 +100,8 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
     extensions: [
       StarterKit,
       Image,
+      Video,
+      Iframe,
       Link.configure({
         openOnClick: false,
       }),
@@ -84,12 +167,10 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
         
         if (res.ok) {
           const { url } = await res.json();
-          editor.chain().focus().insertContent(`
-            <video controls class="max-w-full">
-              <source src="${url}" type="${file.type}">
-              Your browser does not support the video tag.
-            </video>
-          `).run();
+          editor.chain().focus().insertContent({
+            type: 'video',
+            attrs: { src: url, controls: true, class: 'max-w-full' }
+          }).run();
         }
       } catch (error) {
         console.error('Failed to upload video:', error);
@@ -104,17 +185,18 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
     
     const videoId = youtubeUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/)?.[1];
     if (videoId) {
-      editor.chain().focus().insertContent(`
-        <iframe 
-          width="560" 
-          height="315" 
-          src="https://www.youtube.com/embed/${videoId}" 
-          frameborder="0" 
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-          allowfullscreen
-          class="max-w-full"
-        ></iframe>
-      `).run();
+      editor.chain().focus().insertContent({
+        type: 'iframe',
+        attrs: {
+          src: `https://www.youtube.com/embed/${videoId}`,
+          width: '560',
+          height: '315',
+          frameborder: '0',
+          allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+          allowfullscreen: true,
+          class: 'max-w-full'
+        }
+      }).run();
       setYoutubeUrl('');
       setShowYoutubeInput(false);
     }
@@ -123,16 +205,19 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
   const ToolbarButton = ({
     onClick,
     active = false,
+    disabled = false,
     children
   }: {
     onClick: () => void;
     active?: boolean;
+    disabled?: boolean;
     children: React.ReactNode
   }) => (
     <button
       type="button"
       onClick={onClick}
-      className={`p-2 rounded hover:bg-gray-200 ${active ? 'bg-gray-200' : ''}`}
+      disabled={disabled}
+      className={`p-2 rounded hover:bg-gray-200 ${active ? 'bg-gray-200' : ''} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
       {children}
     </button>
@@ -182,6 +267,18 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
           active={editor.isActive('orderedList')}
         >
           1. List
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={() => editor.chain().focus().sinkListItem('listItem').run()}
+          disabled={!editor.can().sinkListItem('listItem')}
+        >
+          → Indent
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={() => editor.chain().focus().liftListItem('listItem').run()}
+          disabled={!editor.can().liftListItem('listItem')}
+        >
+          ← Outdent
         </ToolbarButton>
         <ToolbarButton onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
           &lt;/&gt;
