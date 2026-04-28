@@ -24,6 +24,7 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
       }),
     ],
     content,
+    immediatelyRender: false,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
@@ -119,16 +120,17 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
     }
   };
 
-  const ToolbarButton = ({ 
-    onClick, 
-    active = false, 
-    children 
-  }: { 
-    onClick: () => void; 
-    active?: boolean; 
-    children: React.ReactNode 
+  const ToolbarButton = ({
+    onClick,
+    active = false,
+    children
+  }: {
+    onClick: () => void;
+    active?: boolean;
+    children: React.ReactNode
   }) => (
     <button
+      type="button"
       onClick={onClick}
       className={`p-2 rounded hover:bg-gray-200 ${active ? 'bg-gray-200' : ''}`}
     >
@@ -205,6 +207,7 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
             className="flex-1 px-3 py-1 border border-gray-300 rounded"
           />
           <button
+            type="button"
             onClick={handleYoutubeEmbed}
             className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700"
           >
