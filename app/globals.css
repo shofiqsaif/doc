@@ -23,3 +23,13 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Fix: Ensure empty paragraphs display properly in prose content */
+.prose p:empty::before {
+  content: "";
+  display: inline-block;
+}
+
+.prose p:empty {
+  min-height: 1.5em;
+}

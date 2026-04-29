@@ -15,10 +15,12 @@ import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
-import { Node } from '@tiptap/core';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { FontSize } from '@tiptap/extension-text-style/font-size';
+import { Node, Extension } from '@tiptap/core';
 import { useState } from 'react';
 
-// Type extensions for color extension commands
+// Type extensions for color and font size extension commands
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     setColor: {
@@ -26,6 +28,12 @@ declare module '@tiptap/core' {
     };
     unsetColor: {
       unsetColor: () => ReturnType;
+    };
+    setFontSize: {
+      setFontSize: (size: string) => ReturnType;
+    };
+    unsetFontSize: {
+      unsetFontSize: () => ReturnType;
     };
   }
 }
@@ -129,6 +137,9 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
   const [showTableMenu, setShowTableMenu] = useState(false);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
+  const [showFontSizeDropdown, setShowFontSizeDropdown] = useState(false);
+  const [markdownMode, setMarkdownMode] = useState(false);
+  const [markdownContent, setMarkdownContent] = useState('');
 
   const editor = useEditor({
     extensions: [
@@ -156,6 +167,8 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
       TableRow,
       TableHeader,
       TableCell,
+      TextStyle,
+      FontSize,
     ],
     content,
     immediatelyRender: false,
@@ -167,6 +180,74 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
   if (!editor) {
     return null;
   }
+
+  // Simple markdown to HTML converter
+  const parseMarkdownToHtml = (markdown: string): string => {
+    let html = markdown
+      // Headers
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+      // Bold and Italic
+      .replace(/\*\*\*(.*?)\*\*\*/gim, '<strong><em>$1</em></strong>')
+      .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+      .replace(/_(.*?)_/gim, '<em>$1</em>')
+      // Strikethrough
+      .replace(/~~(.*?)~~/gim, '<s>$1</s>')
+      // Code inline
+      .replace(/`(.*?)`/gim, '<code>$1</code>')
+      // Code block (match multiline content between triple backticks)
+      .replace(/```([\s\S]*?)```/gim, '<pre><code>$1</code></pre>')
+      // Blockquote
+      .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
+      // Unordered list
+      .replace(/^\- (.*$)/gim, '<ul><li>$1</li></ul>')
+      .replace(/^\* (.*$)/gim, '<ul><li>$1</li></ul>')
+      // Ordered list
+      .replace(/^\d+\. (.*$)/gim, '<ol><li>$1</li></ol>')
+      // Links
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2">$1</a>')
+      // Horizontal rule
+      .replace(/^---$/gim, '<hr />')
+      // Paragraphs (wrap remaining text)
+      .replace(/\n\n/gim, '</p><p>')
+      .replace(/^(?!<[h|u|o|b|p|l|a|c|h])(.+)$/gim, '<p>$1</p>');
+    
+    // Fix nested lists
+    html = html.replace(/<\/ul>\s*<ul>/gim, '').replace(/<\/ol>\s*<ol>/gim, '');
+    
+    return html;
+  };
+
+  const handleMarkdownToggle = () => {
+    if (markdownMode) {
+      // Switching from markdown to WYSIWYG
+      const html = parseMarkdownToHtml(markdownContent || editor.getHTML());
+      editor.commands.setContent(html);
+      onChange(html);
+    } else {
+      // Switching from WYSIWYG to markdown
+      // Generate simple markdown from HTML (basic conversion)
+      const html = editor.getHTML();
+      setMarkdownContent(html);
+    }
+    setMarkdownMode(!markdownMode);
+  };
+
+  const handleMarkdownChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const md = e.target.value;
+    setMarkdownContent(md);
+    const html = parseMarkdownToHtml(md);
+    onChange(html);
+  };
+
+  const FONT_SIZES = [
+    { label: 'Small', size: '12px' },
+    { label: 'Normal', size: '16px' },
+    { label: 'Large', size: '20px' },
+    { label: 'Huge', size: '24px' },
+  ];
 
   const handleImageUpload = async () => {
     const input = document.createElement('input');
@@ -749,6 +830,53 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
             <line x1="9" y1="13" x2="15" y2="13" />
           </svg>
         </ToolbarButton>
+
+        <ToolbarDivider />
+
+        {/* Font Size Dropdown */}
+        <div className="relative">
+          <ToolbarButton
+            onClick={() => setShowFontSizeDropdown(!showFontSizeDropdown)}
+            active={showFontSizeDropdown || editor.isActive('textStyle', { fontSize: /.*/ })}
+            title="Font Size"
+          >
+            <span className="text-xs font-medium">Size</span>
+            <svg className="w-3 h-3 ml-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </ToolbarButton>
+          {showFontSizeDropdown && (
+            <div className="absolute top-full left-0 mt-1 p-1 bg-white border border-gray-300 rounded shadow-lg z-50 min-w-[100px]">
+              {FONT_SIZES.map(({ label, size }) => (
+                <button
+                  key={size}
+                  onClick={() => { editor.chain().focus().setFontSize(size).run(); setShowFontSizeDropdown(false); }}
+                  className="w-full px-3 py-1.5 text-sm text-left hover:bg-gray-100 rounded"
+                  style={{ fontSize: size }}
+                >
+                  {label}
+                </button>
+              ))}
+              <button
+                onClick={() => { editor.chain().focus().unsetFontSize().run(); setShowFontSizeDropdown(false); }}
+                className="w-full px-3 py-1.5 text-sm text-left hover:bg-gray-100 rounded text-gray-600"
+              >
+                Default
+              </button>
+            </div>
+          )}
+        </div>
+
+        <ToolbarDivider />
+
+        {/* Markdown Mode Toggle */}
+        <ToolbarButton
+          onClick={handleMarkdownToggle}
+          active={markdownMode}
+          title={markdownMode ? 'Switch to Visual Editor' : 'Switch to Markdown Mode'}
+        >
+          <span className="text-xs font-mono font-medium">MD</span>
+        </ToolbarButton>
       </div>
 
       {/* YouTube Input */}
@@ -778,10 +906,19 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
         </div>
       )}
 
-      <EditorContent
-        editor={editor}
-        className="prose prose-sm max-w-none p-4 min-h-[400px] focus:outline-none [&_.ProseMirror]:outline-none [&_table]:border-collapse [&_table]:w-full [&_td]:border [&_td]:border-gray-300 [&_td]:p-2 [&_th]:border [&_th]:border-gray-300 [&_th]:p-2 [&_th]:bg-gray-100 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic"
-      />
+      {markdownMode ? (
+        <textarea
+          value={markdownContent}
+          onChange={handleMarkdownChange}
+          placeholder="Type Markdown here... Use # for headings, ** for bold, * for italic, - for lists"
+          className="w-full p-4 min-h-[400px] font-mono text-sm resize-y border-0 focus:outline-none bg-gray-50"
+        />
+      ) : (
+        <EditorContent
+          editor={editor}
+          className="prose prose-sm max-w-none p-4 min-h-[400px] focus:outline-none [&_.ProseMirror]:outline-none [&_table]:border-collapse [&_table]:w-full [&_td]:border [&_td]:border-gray-300 [&_td]:p-2 [&_th]:border [&_th]:border-gray-300 [&_th]:p-2 [&_th]:bg-gray-100 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic"
+        />
+      )}
     </div>
   );
 }
