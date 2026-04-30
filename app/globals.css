@@ -33,3 +33,66 @@ body {
 .prose p:empty {
   min-height: 1.5em;
 }
+
+/* Media alignment styles for images, videos, and iframes */
+.prose img,
+.prose video,
+.prose iframe {
+  display: block;
+  max-width: 100%;
+}
+
+/* Left alignment - using margin-right: auto */
+.prose img[style*="text-align: left"],
+.prose video[style*="text-align: left"],
+.prose iframe[style*="text-align: left"],
+.prose .ml-0.mr-auto {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+/* Center alignment - using mx-auto */
+.prose img[style*="text-align: center"],
+.prose video[style*="text-align: center"],
+.prose iframe[style*="text-align: center"],
+.prose .mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Right alignment - using margin-left: auto */
+.prose img[style*="text-align: right"],
+.prose video[style*="text-align: right"],
+.prose iframe[style*="text-align: right"],
+.prose .ml-auto.mr-0 {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+/* Editor-specific alignment styles */
+.ProseMirror img,
+.ProseMirror video,
+.ProseMirror iframe {
+  display: block;
+}
+
+.ProseMirror img[data-text-align="left"],
+.ProseMirror video[data-text-align="left"],
+.ProseMirror iframe[data-text-align="left"] {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.ProseMirror img[data-text-align="center"],
+.ProseMirror video[data-text-align="center"],
+.ProseMirror iframe[data-text-align="center"] {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ProseMirror img[data-text-align="right"],
+.ProseMirror video[data-text-align="right"],
+.ProseMirror iframe[data-text-align="right"] {
+  margin-left: auto;
+  margin-right: 0;
+}

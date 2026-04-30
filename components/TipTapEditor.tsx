@@ -2,7 +2,7 @@
 
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
+import ImageBase from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
@@ -38,7 +38,7 @@ declare module '@tiptap/core' {
   }
 }
 
-// Custom Video extension
+// Custom Video extension with alignment support
 const Video = Node.create({
   name: 'video',
   group: 'block',
@@ -47,7 +47,7 @@ const Video = Node.create({
     return {
       src: { default: null },
       controls: { default: true },
-      class: { default: 'max-w-full' },
+      class: { default: 'max-w-full mx-auto' },
       width: { default: null },
       height: { default: null },
       autoplay: { default: null },
@@ -70,17 +70,44 @@ const Video = Node.create({
           loop: element.hasAttribute('loop'),
           muted: element.hasAttribute('muted'),
           poster: element.getAttribute('poster'),
-          class: element.getAttribute('class') || 'max-w-full',
+          class: element.getAttribute('class') || 'max-w-full mx-auto',
         };
       }
     }];
   },
   renderHTML({ HTMLAttributes }) {
-    return ['video', { ...HTMLAttributes, controls: true, class: 'max-w-full' }];
+    const alignClass = HTMLAttributes.class || 'max-w-full mx-auto';
+    return ['video', { ...HTMLAttributes, controls: true, class: alignClass }];
   },
 });
 
-// Custom Iframe extension for YouTube embeds
+// Custom Image extension with alignment support
+const Image = ImageBase.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      class: {
+        default: 'mx-auto',
+        parseHTML: (element) => element.getAttribute('class') || 'mx-auto',
+        renderHTML: (attributes) => ({
+          class: attributes.class || 'mx-auto',
+        }),
+      },
+    };
+  },
+  addCommands() {
+    return {
+      setImage: (options: { src: string; alt?: string; title?: string; class?: string }) => ({ commands }) => {
+        return commands.insertContent({
+          type: 'image',
+          attrs: options,
+        });
+      },
+    };
+  },
+});
+
+// Custom Iframe extension for YouTube embeds with alignment support
 const Iframe = Node.create({
   name: 'iframe',
   group: 'block',
@@ -93,7 +120,7 @@ const Iframe = Node.create({
       frameborder: { default: '0' },
       allow: { default: null },
       allowfullscreen: { default: true },
-      class: { default: 'max-w-full' },
+      class: { default: 'max-w-full mx-auto' },
     };
   },
   parseHTML() {
@@ -108,13 +135,14 @@ const Iframe = Node.create({
           frameborder: element.getAttribute('frameborder') || '0',
           allow: element.getAttribute('allow'),
           allowfullscreen: element.hasAttribute('allowfullscreen'),
-          class: element.getAttribute('class') || 'max-w-full',
+          class: element.getAttribute('class') || 'max-w-full mx-auto',
         };
       }
     }];
   },
   renderHTML({ HTMLAttributes }) {
-    return ['iframe', { ...HTMLAttributes, class: 'max-w-full' }];
+    const alignClass = HTMLAttributes.class || 'max-w-full mx-auto';
+    return ['iframe', { ...HTMLAttributes, class: alignClass }];
   },
 });
 
@@ -140,6 +168,7 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
   const [showFontSizeDropdown, setShowFontSizeDropdown] = useState(false);
   const [markdownMode, setMarkdownMode] = useState(false);
   const [markdownContent, setMarkdownContent] = useState('');
+  const [isMediaSelectedState, setIsMediaSelectedState] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -153,7 +182,7 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
         openOnClick: false,
       }),
       TextAlign.configure({
-        types: ['heading', 'paragraph'],
+        types: ['heading', 'paragraph', 'image', 'video', 'iframe'],
       }),
       Underline,
       Color,
@@ -175,11 +204,37 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
+    onSelectionUpdate: ({ editor }) => {
+      // Update media selection state when selection changes
+      const { selection } = editor.state;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sel = selection as any;
+      let isMedia = false;
+      if (sel.node && sel.node.type) {
+        isMedia = ['image', 'video', 'iframe'].includes(sel.node.type.name);
+      }
+      if (!isMedia) {
+        const node = selection.$from.node();
+        if (node && ['image', 'video', 'iframe'].includes(node.type.name)) {
+          isMedia = true;
+        }
+      }
+      if (!isMedia) {
+        const parentNode = selection.$from.parent;
+        if (parentNode && ['image', 'video', 'iframe'].includes(parentNode.type.name)) {
+          isMedia = true;
+        }
+      }
+      setIsMediaSelectedState(isMedia);
+    },
   });
 
   if (!editor) {
     return null;
   }
+
+  // Helper to check if an image, video, or iframe node is currently selected
+  const isMediaSelected = () => isMediaSelectedState;
 
   // Simple markdown to HTML converter
   const parseMarkdownToHtml = (markdown: string): string => {
@@ -253,7 +308,7 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/jpeg,image/png,image/webp';
-    
+
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
@@ -266,10 +321,13 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
           method: 'POST',
           body: formData,
         });
-        
+
         if (res.ok) {
           const { url } = await res.json();
-          editor.chain().focus().setImage({ src: url }).run();
+          editor.chain().focus().insertContent({
+            type: 'image',
+            attrs: { src: url, class: 'mx-auto' }
+          }).run();
         }
       } catch (error) {
         console.error('Failed to upload image:', error);
@@ -283,7 +341,7 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'video/mp4,video/webm';
-    
+
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
@@ -296,12 +354,12 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
           method: 'POST',
           body: formData,
         });
-        
+
         if (res.ok) {
           const { url } = await res.json();
           editor.chain().focus().insertContent({
             type: 'video',
-            attrs: { src: url, controls: true, class: 'max-w-full' }
+            attrs: { src: url, controls: true, class: 'max-w-full mx-auto' }
           }).run();
         }
       } catch (error) {
@@ -314,7 +372,7 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
 
   const handleYoutubeEmbed = () => {
     if (!youtubeUrl) return;
-    
+
     const videoId = youtubeUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/)?.[1];
     if (videoId) {
       editor.chain().focus().insertContent({
@@ -326,7 +384,7 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
           frameborder: '0',
           allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
           allowfullscreen: true,
-          class: 'max-w-full'
+          class: 'max-w-full mx-auto'
         }
       }).run();
       setYoutubeUrl('');
@@ -815,6 +873,43 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
             <line x1="2" y1="17" x2="7" y2="17" />
             <line x1="17" y1="17" x2="22" y2="17" />
             <line x1="17" y1="7" x2="22" y2="7" />
+          </svg>
+        </ToolbarButton>
+
+        <ToolbarDivider />
+
+        {/* Media Alignment - only active when image/video/iframe is selected */}
+        <ToolbarButton
+          onClick={() => editor.chain().focus().setTextAlign('left').run()}
+          active={editor.isActive({ textAlign: 'left' })}
+          disabled={!isMediaSelected()}
+          title="Align Media Left"
+        >
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="5" width="12" height="10" rx="1" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={() => editor.chain().focus().setTextAlign('center').run()}
+          active={editor.isActive({ textAlign: 'center' })}
+          disabled={!isMediaSelected()}
+          title="Center Media"
+        >
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="6" y="5" width="12" height="10" rx="1" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={() => editor.chain().focus().setTextAlign('right').run()}
+          active={editor.isActive({ textAlign: 'right' })}
+          disabled={!isMediaSelected()}
+          title="Align Media Right"
+        >
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="9" y="5" width="12" height="10" rx="1" />
+            <line x1="3" y1="18" x2="21" y2="18" />
           </svg>
         </ToolbarButton>
 
