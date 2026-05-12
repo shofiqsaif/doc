@@ -11,11 +11,230 @@
   --font-sans: var(--font-inter);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Dark mode styles */
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+/* Dark mode element overrides */
+.dark body,
+.dark body[style] {
+  background: #0a0a0a !important;
+  color: #ededed !important;
+}
+
+.dark .bg-white {
+  background-color: #1f2937 !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: #111827 !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: #1f2937 !important;
+}
+
+.dark .bg-gray-800 {
+  background-color: #374151 !important;
+}
+
+.dark .text-gray-900 {
+  color: #f3f4f6 !important;
+}
+
+.dark .text-gray-700 {
+  color: #e5e7eb !important;
+}
+
+.dark .text-gray-600 {
+  color: #d1d5db !important;
+}
+
+.dark .text-gray-500 {
+  color: #9ca3af !important;
+}
+
+.dark .text-gray-400 {
+  color: #6b7280 !important;
+}
+
+.dark .text-gray-300 {
+  color: #d1d5db !important;
+}
+
+.dark .text-gray-200 {
+  color: #e5e7eb !important;
+}
+
+.dark .text-gray-100 {
+  color: #f3f4f6 !important;
+}
+
+.dark .text-yellow-400 {
+  color: #fbbf24 !important;
+}
+
+.dark .border-gray-200 {
+  border-color: #374151 !important;
+}
+
+.dark .border-gray-300 {
+  border-color: #4b5563 !important;
+}
+
+.dark .border-gray-600 {
+  border-color: #4b5563 !important;
+}
+
+.dark .border-gray-100 {
+  border-color: #374151 !important;
+}
+
+.dark .border-b {
+  border-color: #374151 !important;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  background-color: #1f2937 !important;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  background-color: #1f2937 !important;
+}
+
+.dark .hover\:bg-gray-200:hover {
+  background-color: #374151 !important;
+}
+
+.dark .hover\:bg-gray-700:hover {
+  background-color: #4b5563 !important;
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #1f2937 !important;
+  color: #f3f4f6 !important;
+  border-color: #4b5563 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+/* Prose content dark mode */
+.dark .prose {
+  color: #e5e7eb !important;
+}
+
+.dark .prose h1,
+.dark .prose h2,
+.dark .prose h3,
+.dark .prose h4,
+.dark .prose h5,
+.dark .prose h6 {
+  color: #f3f4f6 !important;
+}
+
+.dark .prose p,
+.dark .prose li {
+  color: #d1d5db !important;
+}
+
+.dark .prose a {
+  color: #818cf8 !important;
+}
+
+.dark .prose code {
+  background-color: #1f2937 !important;
+  color: #f472b6 !important;
+}
+
+.dark .prose pre {
+  background-color: #1f2937 !important;
+}
+
+.dark .prose blockquote {
+  border-color: #4b5563 !important;
+  color: #9ca3af !important;
+}
+
+.dark .prose table {
+  border-color: #374151 !important;
+}
+
+.dark .prose th,
+.dark .prose td {
+  border-color: #374151 !important;
+}
+
+.dark .prose th {
+  background-color: #1f2937 !important;
+}
+
+.dark .prose tr:nth-child(even) {
+  background-color: #111827 !important;
+}
+
+/* Editor dark mode */
+.dark .ProseMirror {
+  background-color: #1f2937 !important;
+  color: #f3f4f6 !important;
+}
+
+.dark .ProseMirror:focus {
+  outline: none;
+}
+
+
+/* Scrollbar dark mode */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* TipTap editor toolbar dark mode */
+.dark .editor-toolbar {
+  background-color: #1f2937 !important;
+  border-color: #374151 !important;
+}
+
+.dark .editor-toolbar button {
+  color: #d1d5db !important;
+}
+
+.dark .editor-toolbar button:hover {
+  background-color: #374151 !important;
+}
+
+.dark .editor-toolbar button.active {
+  background-color: #4b5563 !important;
+  color: #818cf8 !important;
+}
+
+.dark .editor-toolbar .border-r {
+  border-color: #374151 !important;
+}
+
+/* Modal dark mode */
+.dark .bg-black\/50 {
+  background-color: rgba(0, 0, 0, 0.7) !important;
 }
 
 body {

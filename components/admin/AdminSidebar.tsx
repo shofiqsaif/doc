@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const navItems = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: '📊' },
@@ -41,6 +42,16 @@ export default function AdminSidebar() {
         ))}
       </nav>
 
+      <div className="p-4 border-t border-gray-800 flex items-center justify-between">
+        <Link
+          href="/"
+          className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+        >
+          <span>🏠</span>
+          <span>Back to Site</span>
+        </Link>
+        <ThemeToggle />
+      </div>
       <div className="p-4 border-t border-gray-800">
         <button
           onClick={() => signOut({ callbackUrl: '/' })}

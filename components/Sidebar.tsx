@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import ThemeToggle from './ThemeToggle';
 
 interface Section {
   id: number;
@@ -64,6 +65,10 @@ export default function Sidebar() {
             <div className="w-8 h-8 bg-indigo-600 rounded-lg"></div>
             <span className="font-semibold text-lg">Docs</span>
           </Link>
+
+          <div className="mb-6">
+            <ThemeToggle />
+          </div>
 
           <nav className="space-y-1">
             {sections.map((section) => (
