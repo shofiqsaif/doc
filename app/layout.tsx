@@ -23,7 +23,7 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans text-black">
+      <body className="min-h-full flex flex-col font-sans text-black" suppressHydrationWarning>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
